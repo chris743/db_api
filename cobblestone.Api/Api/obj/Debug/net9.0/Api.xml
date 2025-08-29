@@ -53,5 +53,10 @@
             Delete a product.
             </summary>
         </member>
+        <member name="M:Api.Controllers.ScoutReportsWithBlockController.Get(System.Threading.CancellationToken)">
+            <summary>
+            Get top 1000 Blocks
+            </summary>
+        </member>
     </members>
 </doc>

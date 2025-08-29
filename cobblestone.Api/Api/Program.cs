@@ -19,9 +19,9 @@ builder.Services.AddControllers();
 // API Versioning
 builder.Services.AddApiVersioning(options =>
 {
-options.AssumeDefaultVersionWhenUnspecified = true;
-options.DefaultApiVersion = new ApiVersion(1, 0);
-options.ReportApiVersions = true;
+    options.AssumeDefaultVersionWhenUnspecified = true;
+    options.DefaultApiVersion = new ApiVersion(1, 0);
+    options.ReportApiVersions = true;
 });
 
 
@@ -41,34 +41,34 @@ options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnectio
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
-options.SwaggerDoc("v1", new OpenApiInfo
-{
-Title = "MyCompany API",
-Version = "v1",
-Description = "HTTP API for MyCompany services",
-Contact = new OpenApiContact { Name = "API Team", Email = "api-team@mycompany.com" }
-});
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "MyCompany API",
+        Version = "v1",
+        Description = "HTTP API for MyCompany services",
+        Contact = new OpenApiContact { Name = "API Team", Email = "api-team@mycompany.com" }
+    });
 
 
-// XML comments (for controller/action summaries)
-var xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFilename);
-if (File.Exists(xmlPath))
-{
-    options.IncludeXmlComments(xmlPath, includeControllerXmlComments: true);
-}
+    // XML comments (for controller/action summaries)
+    var xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFilename);
+    if (File.Exists(xmlPath))
+    {
+        options.IncludeXmlComments(xmlPath, includeControllerXmlComments: true);
+    }
 
-// JWT bearer support in Swagger UI
-options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-{
-Name = "Authorization",
-Type = SecuritySchemeType.Http,
-Scheme = "bearer",
-BearerFormat = "JWT",
-In = ParameterLocation.Header,
-Description = "Input your JWT like: Bearer {token}"
-});
-options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    // JWT bearer support in Swagger UI
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Input your JWT like: Bearer {token}"
+    });
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
 {
 {
 new OpenApiSecurityScheme
@@ -88,12 +88,12 @@ Array.Empty<string>()
 // CORS (adjust origins as needed)
 builder.Services.AddCors(options =>
 {
-options.AddPolicy("default", policy =>
-{
-policy.WithOrigins("http://localhost:3000","http://localhost:3001", "https://your-frontend.example")
-.AllowAnyHeader()
-.AllowAnyMethod();
-});
+    options.AddPolicy("default", policy =>
+    {
+        policy.WithOrigins("http://localhost:3000", "http://localhost:3001", "https://your-frontend.example")
+    .AllowAnyHeader()
+    .AllowAnyMethod();
+    });
 });
 
 
@@ -102,14 +102,14 @@ policy.WithOrigins("http://localhost:3000","http://localhost:3001", "https://you
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 .AddJwtBearer(options =>
 {
-options.TokenValidationParameters = new TokenValidationParameters
-{
-ValidateIssuer = false,
-ValidateAudience = false,
-ValidateLifetime = true,
-ValidateIssuerSigningKey = false,
-// Configure your signing key/authority when ready
-};
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = false,
+        ValidateAudience = false,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = false,
+        // Configure your signing key/authority when ready
+    };
 });
 
 
@@ -120,8 +120,8 @@ var app = builder.Build();
 app.UseSwagger();
 app.UseSwaggerUI(options =>
 {
-options.SwaggerEndpoint("/swagger/v1/swagger.json", "MyCompany API v1");
-options.DisplayRequestDuration();
+    options.SwaggerEndpoint("/swagger/v1/swagger.json", "MyCompany API v1");
+    options.DisplayRequestDuration();
 });
 
 

@@ -12,6 +12,7 @@ public class AppDbContext : DbContext
     public DbSet<HarvestContractor> HarvestContractors => Set<HarvestContractor>();
     public DbSet<Pool> Pools => Set<Pool>();
     public DbSet<CommodityClass> Commodities => Set<CommodityClass>();
+    public DbSet<ScoutReportWithBlock> ScoutReportsWithBlock => Set<ScoutReportWithBlock>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -93,5 +94,13 @@ public class AppDbContext : DbContext
             b.Property(x => x.InvoiceCommodity).HasMaxLength(50).IsUnicode(true);
             b.Property(x => x.Commodity).HasMaxLength(50).IsUnicode(true);
         });
+        modelBuilder.Entity<ScoutReportWithBlock>(entity =>
+            {
+                entity.HasNoKey(); // keyless entity type because it's a view
+                entity.ToView("VW_ScoutReportWithBlock", "dbo");
+
+                entity.Property(e => e.ScoutReportId).HasColumnName("ScoutReportId");
+                entity.Property(e => e.BlockId).HasColumnName("BlockId");
+            });
     }
 }
