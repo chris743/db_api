@@ -20,10 +20,10 @@ public class ScoutReportsWithBlockController : ControllerBase
     [ProducesResponseType(typeof(IEnumerable<ScoutReportWithBlock>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<ScoutReportWithBlock>>> Get(CancellationToken ct)
     {
-        var blocks = await _db.Blocks
+        var scoutreportswithblock = await _db.ScoutReportsWithBlock
             .AsNoTracking()
             .ToListAsync(ct);
 
-        return Ok(blocks);
+        return Ok(scoutreportswithblock);
     }
 }
