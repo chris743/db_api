@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\chrism\\Documents\\harvestplanner_backend\\cobblestone.Api\\api\\Api.csproj": {}
+    "C:\\Users\\chrism\\Documents\\harvestplanner_backend\\cobblestone.Api\\Api\\Api.csproj": {}
   },
   "projects": {
-    "C:\\Users\\chrism\\Documents\\harvestplanner_backend\\cobblestone.Api\\api\\Api.csproj": {
+    "C:\\Users\\chrism\\Documents\\harvestplanner_backend\\cobblestone.Api\\Api\\Api.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\chrism\\Documents\\harvestplanner_backend\\cobblestone.Api\\api\\Api.csproj",
+        "projectUniqueName": "C:\\Users\\chrism\\Documents\\harvestplanner_backend\\cobblestone.Api\\Api\\Api.csproj",
         "projectName": "Api",
-        "projectPath": "C:\\Users\\chrism\\Documents\\harvestplanner_backend\\cobblestone.Api\\api\\Api.csproj",
+        "projectPath": "C:\\Users\\chrism\\Documents\\harvestplanner_backend\\cobblestone.Api\\Api\\Api.csproj",
         "packagesPath": "C:\\Users\\chrism\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\chrism\\Documents\\harvestplanner_backend\\cobblestone.Api\\api\\obj\\",
+        "outputPath": "C:\\Users\\chrism\\Documents\\harvestplanner_backend\\cobblestone.Api\\Api\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\chrism\\AppData\\Roaming\\NuGet\\NuGet.Config"

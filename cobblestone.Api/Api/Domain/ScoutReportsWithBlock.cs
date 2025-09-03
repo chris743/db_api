@@ -59,9 +59,6 @@ namespace Api.Domain
         [Column("Grower Number")]
         public long? GrowerNumber { get; set; }
 
-        [Column("Grower Number Name")]
-        public string? GrowerNumberName { get; set; }
-
         [Column("Observations")]
         public string? Observations { get; set; }
 
@@ -437,9 +434,6 @@ namespace Api.Domain
 
         [Column("BlockGrowerNumber")]
         public long? BlockGrowerNumber { get; set; }
-
-        [Column("BlockGrowerName")]
-        public string? BlockGrowerName { get; set; }
 
         [Column("Latitude")]
         [Precision(16, 2)]
