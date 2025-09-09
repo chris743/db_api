@@ -13,6 +13,7 @@ public class AppDbContext : DbContext
     public DbSet<Pool> Pools => Set<Pool>();
     public DbSet<CommodityClass> Commodities => Set<CommodityClass>();
     public DbSet<ScoutReportWithBlock> ScoutReportsWithBlock => Set<ScoutReportWithBlock>();
+    public DbSet<ProcessProductionRun> ProcessProductionRuns => Set<ProcessProductionRun>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -102,5 +103,55 @@ public class AppDbContext : DbContext
                 entity.Property(e => e.ScoutReportId).HasColumnName("ScoutReportId");
                 entity.Property(e => e.BlockId).HasColumnName("BlockId");
             });
+
+        modelBuilder.Entity<ProcessProductionRun>(b =>
+        {
+            b.ToTable("ProcessProductionRuns", "dbo");
+            b.HasKey(x => x.id);
+
+            b.Property(x => x.source_database)
+                .IsRequired()
+                .HasMaxLength(50)
+                .IsUnicode(false);
+
+            b.Property(x => x.location)
+                .HasMaxLength(100)
+                .IsUnicode(false);
+
+            b.Property(x => x.pool)
+                .HasMaxLength(50)
+                .IsUnicode(false);
+
+            b.Property(x => x.notes)
+                .IsUnicode(false);
+
+            b.Property(x => x.run_status)
+                .HasMaxLength(50)
+                .IsUnicode(false);
+
+            b.Property(x => x.batch_id)
+                .HasMaxLength(50)
+                .IsUnicode(false);
+
+            // Configure date columns
+            b.Property(x => x.run_date).HasColumnType("date");
+            b.Property(x => x.pick_date).HasColumnType("date");
+            b.Property(x => x.time_started).HasColumnType("datetime2");
+            b.Property(x => x.time_completed).HasColumnType("datetime2");
+
+            // Composite foreign key to Block
+            b.HasOne(x => x.Block)
+                .WithMany()
+                .HasForeignKey(x => new { x.source_database, x.GABLOCKIDX })
+                .HasPrincipalKey(x => new { x.source_database, x.GABLOCKIDX })
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Indexes
+            b.HasIndex(x => new { x.source_database, x.GABLOCKIDX });
+            b.HasIndex(x => x.run_date);
+            b.HasIndex(x => x.pick_date);
+            b.HasIndex(x => x.run_status);
+            b.HasIndex(x => x.batch_id);
+        });
     }
 }

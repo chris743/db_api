@@ -3,6 +3,24 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Api.Contracts;
 
+public record BlockInfoDto(
+    string? id,
+    string? name,
+    string? blocktype,
+    string? growerName,
+    string? growerID,
+    double? acres,
+    string? district,
+    string? cropyeardescr,
+    double? latitude,
+    double? longitude
+);
+
+public record CommodityInfoDto(
+    string? invoiceCommodity,
+    string? commodity
+);
+
 
 
 public record HarvestPlanCreateDto(
@@ -57,5 +75,7 @@ public record HarvestPlanDto(
     string? deliver_to,
     string? packed_by,
     DateTime? date,
-    int?   bins
+    int?   bins,
+    BlockInfoDto? block,
+    CommodityInfoDto? commodity
 );

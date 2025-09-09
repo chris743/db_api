@@ -14,12 +14,14 @@
 
 <ItemGroup>
 <!-- For API versioning (added below) -->
+<PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
 <PackageReference Include="Microsoft.AspNetCore.Mvc.Versioning" Version="5.1.0" />
 <PackageReference Include="Microsoft.AspNetCore.Mvc.Versioning.ApiExplorer" Version="5.1.0" />
 <!-- Swashbuckle is already present from the template; keeping here for reference -->
 <!-- <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" /> -->
 <!-- For JWT auth (if you want to enable it) -->
-<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.8" />
+<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.8" />
+<PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.8" />
 <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.8" />
 <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.8">
   <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

@@ -435,6 +435,9 @@ namespace Api.Domain
         [Column("BlockGrowerNumber")]
         public long? BlockGrowerNumber { get; set; }
 
+        [Column("BlockGrowerName")]
+        public string? BlockGrowerName { get; set; }
+
         [Column("Latitude")]
         [Precision(16, 2)]
         public decimal? Latitude { get; set; }

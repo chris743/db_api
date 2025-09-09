@@ -23,6 +23,9 @@
         <member name="T:Api.Controllers.PoolsController">
             <summary>Read-only access to Pools.</summary>
         </member>
+        <member name="T:Api.Controllers.ProcessProductionRunsController">
+            <summary>Manage production runs.</summary>
+        </member>
         <member name="T:Api.Controllers.ProductsController">
             <summary>
             Manage products.

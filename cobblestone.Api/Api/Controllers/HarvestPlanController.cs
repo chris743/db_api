@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Api.Data;
 using Api.Domain;
 using Api.Contracts;
+using Microsoft.AspNetCore.Authorization;
 
 
 namespace Api.Controllers;
@@ -12,6 +13,7 @@ namespace Api.Controllers;
 [ApiController]
 [Route("api/v{version:apiVersion}/[controller]")]
 [ApiVersion("1.0")]
+[Authorize] // Require authentication for all endpoints
 public class HarvestPlansController : ControllerBase
 {
 private readonly AppDbContext _db;
@@ -43,7 +45,29 @@ public HarvestPlansController(AppDbContext db) => _db = db;
         x.deliver_to,
         x.packed_by,
         x.date,
-        x.bins))
+        x.bins,
+        _db.Blocks
+            .Where(b => b.source_database == x.grower_block_source_database && b.GABLOCKIDX == x.grower_block_id)
+            .Select(b => new BlockInfoDto(
+                b.ID,
+                b.NAME,
+                b.BLOCKTYPE,
+                b.GrowerName,
+                b.GrowerID,
+                b.ACRES,
+                b.DISTRICT,
+                b.CROPYEARDESCR,
+                b.LATITUDE,
+                b.LONGITUDE
+            ))
+            .FirstOrDefault(),
+        _db.Blocks
+            .Where(b => b.source_database == x.grower_block_source_database && b.GABLOCKIDX == x.grower_block_id && b.CMTYIDX.HasValue)
+            .SelectMany(b => _db.Commodities
+                .Where(c => c.source_database == b.source_database && c.CommodityIDx == b.CMTYIDX.Value)
+                .Select(c => new CommodityInfoDto(c.InvoiceCommodity, c.Commodity)))
+            .FirstOrDefault()
+        ))
         .ToListAsync(ct);
         return Ok(rows);
     }
@@ -55,7 +79,42 @@ public async Task<ActionResult<HarvestPlanDto>> Get(Guid id, CancellationToken c
 {
 var x = await _db.HarvestPlans.AsNoTracking().FirstOrDefaultAsync(p => p.id == id, ct);
 if (x is null) return NotFound();
-return new HarvestPlanDto(x.id, x.grower_block_source_database, x.grower_block_id, x.planned_bins, x.contractor_id, x.harvesting_rate, x.hauler_id, x.hauling_rate, x.forklift_contractor_id, x.forklift_rate, x.pool_id, x.notes_general, x.deliver_to, x.packed_by, x.date, x.bins);
+
+// Get block data
+var block = await _db.Blocks
+    .Where(b => b.source_database == x.grower_block_source_database && b.GABLOCKIDX == x.grower_block_id)
+    .Select(b => new BlockInfoDto(
+        b.ID,
+        b.NAME,
+        b.BLOCKTYPE,
+        b.GrowerName,
+        b.GrowerID,
+        b.ACRES,
+        b.DISTRICT,
+        b.CROPYEARDESCR,
+        b.LATITUDE,
+        b.LONGITUDE
+    ))
+    .FirstOrDefaultAsync(ct);
+
+// Get commodity data
+CommodityInfoDto? commodity = null;
+if (block != null)
+{
+    var blockWithCommodity = await _db.Blocks
+        .Where(b => b.source_database == x.grower_block_source_database && b.GABLOCKIDX == x.grower_block_id)
+        .FirstOrDefaultAsync(ct);
+    
+    if (blockWithCommodity?.CMTYIDX.HasValue == true)
+    {
+        commodity = await _db.Commodities
+            .Where(c => c.source_database == x.grower_block_source_database && c.CommodityIDx == blockWithCommodity.CMTYIDX.Value)
+            .Select(c => new CommodityInfoDto(c.InvoiceCommodity, c.Commodity))
+            .FirstOrDefaultAsync(ct);
+    }
+}
+
+return new HarvestPlanDto(x.id, x.grower_block_source_database, x.grower_block_id, x.planned_bins, x.contractor_id, x.harvesting_rate, x.hauler_id, x.hauling_rate, x.forklift_contractor_id, x.forklift_rate, x.pool_id, x.notes_general, x.deliver_to, x.packed_by, x.date, x.bins, block, commodity);
 }
 
 
@@ -91,7 +150,7 @@ return new HarvestPlanDto(x.id, x.grower_block_source_database, x.grower_block_i
         await _db.SaveChangesAsync(ct);
 
 
-        var dto = new HarvestPlanDto(entity.id, entity.grower_block_source_database, entity.grower_block_id, entity.planned_bins, entity.contractor_id, entity.harvesting_rate, entity.hauler_id, entity.hauling_rate, entity.forklift_contractor_id, entity.forklift_rate, entity.pool_id, entity.notes_general, entity.deliver_to, entity.packed_by, entity.date, entity.bins);
+        var dto = new HarvestPlanDto(entity.id, entity.grower_block_source_database, entity.grower_block_id, entity.planned_bins, entity.contractor_id, entity.harvesting_rate, entity.hauler_id, entity.hauling_rate, entity.forklift_contractor_id, entity.forklift_rate, entity.pool_id, entity.notes_general, entity.deliver_to, entity.packed_by, entity.date, entity.bins, null, null);
         return CreatedAtAction(nameof(Get), new { id = entity.id, version = "1" }, dto);
     }
 // PUT: /api/v1/HarvestPlans/{id}
