@@ -46,6 +46,7 @@ builder.Services.AddDbContext<AuthDbContext>(options =>
 // Register services
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IPasswordService, PasswordService>();
+builder.Services.AddScoped<IZohoSessionService, ZohoSessionService>();
 
 
 
@@ -145,6 +146,10 @@ app.UseSwaggerUI(options =>
 
 app.UseHttpsRedirection();
 app.UseCors("default");
+
+// Add Zoho authentication middleware before standard authentication
+app.UseMiddleware<Api.Middleware.ZohoAuthenticationMiddleware>();
+
 app.UseAuthentication();
 app.UseAuthorization();
 

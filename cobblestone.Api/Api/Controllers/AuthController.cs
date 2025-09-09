@@ -18,17 +18,20 @@ namespace Api.Controllers
         private readonly AuthDbContext _db;
         private readonly IJwtService _jwtService;
         private readonly IPasswordService _passwordService;
+        private readonly IZohoSessionService _zohoSessionService;
         private readonly ILogger<AuthController> _logger;
 
         public AuthController(
             AuthDbContext db, 
             IJwtService jwtService, 
             IPasswordService passwordService,
+            IZohoSessionService zohoSessionService,
             ILogger<AuthController> logger)
         {
             _db = db;
             _jwtService = jwtService;
             _passwordService = passwordService;
+            _zohoSessionService = zohoSessionService;
             _logger = logger;
         }
 
@@ -157,13 +160,54 @@ namespace Api.Controllers
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var username = User.FindFirst(ClaimTypes.Name)?.Value;
             var role = User.FindFirst(ClaimTypes.Role)?.Value;
+            var sessionType = User.FindFirst("SessionType")?.Value;
 
             if (userId == null)
             {
                 return Unauthorized();
             }
 
-            return Ok(new { UserId = userId, Username = username, Role = role });
+            return Ok(new { 
+                UserId = userId, 
+                Username = username, 
+                Role = role,
+                SessionType = sessionType ?? "JWT"
+            });
+        }
+
+        [HttpPost("zoho/session")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> CreateZohoSession([FromBody] CreateZohoSessionRequest request)
+        {
+            if (string.IsNullOrEmpty(request.SessionKey) || request.UserId <= 0)
+            {
+                return BadRequest("SessionKey and UserId are required.");
+            }
+
+            // Verify the user exists
+            var user = await _db.Users.FindAsync(request.UserId);
+            if (user == null)
+            {
+                return NotFound("User not found.");
+            }
+
+            // Create or update the Zoho session
+            var session = await _zohoSessionService.CreateZohoSessionAsync(request.SessionKey, request.UserId);
+            if (session == null)
+            {
+                return BadRequest("Failed to create Zoho session.");
+            }
+
+            _logger.LogInformation("Zoho session created for user {UserId} with key {SessionKey}", request.UserId, request.SessionKey);
+
+            return Ok(new { 
+                Message = "Zoho session created successfully",
+                SessionId = session.Id,
+                UserId = user.Id,
+                Username = user.Username
+            });
         }
     }
 }
