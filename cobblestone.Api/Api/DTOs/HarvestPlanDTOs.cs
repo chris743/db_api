@@ -24,8 +24,9 @@ public record CommodityInfoDto(
 
 
 public record HarvestPlanCreateDto(
-    [param: Required] string grower_block_source_database,
-    [param: Required] int grower_block_id,
+    string? grower_block_source_database,
+    int? grower_block_id,
+    Guid? placeholder_grower_id,
     int? planned_bins,
     long? contractor_id,
     decimal? harvesting_rate,
@@ -45,6 +46,7 @@ public record HarvestPlanCreateDto(
 public record HarvestPlanUpdateDto(
     string? grower_block_source_database,
     int? grower_block_id,
+    Guid? placeholder_grower_id,
     int? planned_bins,
     long? contractor_id,
     decimal? harvesting_rate,
@@ -61,8 +63,9 @@ public record HarvestPlanUpdateDto(
 );
 public record HarvestPlanDto(
     Guid id,
-    string grower_block_source_database,
-    int    grower_block_id,
+    string? grower_block_source_database,
+    int?    grower_block_id,
+    Guid?   placeholder_grower_id,
     int?   planned_bins,
     long?  contractor_id,
     decimal? harvesting_rate,

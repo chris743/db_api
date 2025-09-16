@@ -33,6 +33,7 @@ public HarvestPlansController(AppDbContext db) => _db = db;
         x.id,
         x.grower_block_source_database,
         x.grower_block_id,
+        x.placeholder_grower_id,
         x.planned_bins,
         x.contractor_id,
         x.harvesting_rate,
@@ -114,7 +115,7 @@ if (block != null)
     }
 }
 
-return new HarvestPlanDto(x.id, x.grower_block_source_database, x.grower_block_id, x.planned_bins, x.contractor_id, x.harvesting_rate, x.hauler_id, x.hauling_rate, x.forklift_contractor_id, x.forklift_rate, x.pool_id, x.notes_general, x.deliver_to, x.packed_by, x.date, x.bins, block, commodity);
+return new HarvestPlanDto(x.id, x.grower_block_source_database, x.grower_block_id, x.placeholder_grower_id, x.planned_bins, x.contractor_id, x.harvesting_rate, x.hauler_id, x.hauling_rate, x.forklift_contractor_id, x.forklift_rate, x.pool_id, x.notes_general, x.deliver_to, x.packed_by, x.date, x.bins, block, commodity);
 }
 
 
@@ -128,8 +129,9 @@ return new HarvestPlanDto(x.id, x.grower_block_source_database, x.grower_block_i
         var entity = new HarvestPlan
         {
             id = Guid.NewGuid(),
-            grower_block_source_database = input.grower_block_source_database,
-            grower_block_id = input.grower_block_id,
+            grower_block_source_database = input.grower_block_source_database ?? "",
+            grower_block_id = input.grower_block_id ?? 0,
+            placeholder_grower_id = input.placeholder_grower_id,
             planned_bins = input.planned_bins,
             contractor_id = input.contractor_id,
             harvesting_rate = input.harvesting_rate,
@@ -150,7 +152,7 @@ return new HarvestPlanDto(x.id, x.grower_block_source_database, x.grower_block_i
         await _db.SaveChangesAsync(ct);
 
 
-        var dto = new HarvestPlanDto(entity.id, entity.grower_block_source_database, entity.grower_block_id, entity.planned_bins, entity.contractor_id, entity.harvesting_rate, entity.hauler_id, entity.hauling_rate, entity.forklift_contractor_id, entity.forklift_rate, entity.pool_id, entity.notes_general, entity.deliver_to, entity.packed_by, entity.date, entity.bins, null, null);
+        var dto = new HarvestPlanDto(entity.id, entity.grower_block_source_database, entity.grower_block_id, entity.placeholder_grower_id, entity.planned_bins, entity.contractor_id, entity.harvesting_rate, entity.hauler_id, entity.hauling_rate, entity.forklift_contractor_id, entity.forklift_rate, entity.pool_id, entity.notes_general, entity.deliver_to, entity.packed_by, entity.date, entity.bins, null, null);
         return CreatedAtAction(nameof(Get), new { id = entity.id, version = "1" }, dto);
     }
 // PUT: /api/v1/HarvestPlans/{id}
@@ -163,8 +165,9 @@ var x = await _db.HarvestPlans.FirstOrDefaultAsync(p => p.id == id, ct);
 if (x is null) return NotFound();
 
 
-if (!string.IsNullOrWhiteSpace(input.grower_block_source_database)) x.grower_block_source_database = input.grower_block_source_database;
+if (input.grower_block_source_database != null) x.grower_block_source_database = input.grower_block_source_database;
 if (input.grower_block_id.HasValue) x.grower_block_id = input.grower_block_id.Value;
+x.placeholder_grower_id = input.placeholder_grower_id ?? x.placeholder_grower_id;
 x.planned_bins = input.planned_bins ?? x.planned_bins;
 x.contractor_id = input.contractor_id ?? x.contractor_id;
 x.harvesting_rate = input.harvesting_rate ?? x.harvesting_rate;

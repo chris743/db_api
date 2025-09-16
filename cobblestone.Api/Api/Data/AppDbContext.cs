@@ -14,6 +14,7 @@ public class AppDbContext : DbContext
     public DbSet<CommodityClass> Commodities => Set<CommodityClass>();
     public DbSet<ScoutReportWithBlock> ScoutReportsWithBlock => Set<ScoutReportWithBlock>();
     public DbSet<ProcessProductionRun> ProcessProductionRuns => Set<ProcessProductionRun>();
+    public DbSet<PlaceholderGrower> PlaceholderGrowers => Set<PlaceholderGrower>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -45,10 +46,10 @@ public class AppDbContext : DbContext
 
 
             b.Property(x => x.grower_block_source_database)
-            .IsRequired()
             .HasMaxLength(20)
             .IsUnicode(true);
 
+            b.Property(x => x.placeholder_grower_id);
 
             b.Property(x => x.deliver_to).HasMaxLength(30).IsUnicode(false);
             b.Property(x => x.packed_by).HasMaxLength(30).IsUnicode(false);
@@ -152,6 +153,38 @@ public class AppDbContext : DbContext
             b.HasIndex(x => x.pick_date);
             b.HasIndex(x => x.run_status);
             b.HasIndex(x => x.batch_id);
+        });
+
+        // PlaceholderGrower configuration
+        modelBuilder.Entity<PlaceholderGrower>(b =>
+        {
+            b.ToTable("PlaceholderGrowers", "dbo");
+            b.HasKey(x => x.id);
+            b.Property(x => x.grower_name)
+                .IsRequired()
+                .HasMaxLength(100)
+                .IsUnicode(false);
+            b.Property(x => x.commodity_name)
+                .IsRequired()
+                .HasMaxLength(100)
+                .IsUnicode(false);
+            b.Property(x => x.created_at)
+                .IsRequired()
+                .HasColumnType("datetime2");
+            b.Property(x => x.updated_at)
+                .HasColumnType("datetime2");
+            b.Property(x => x.is_active)
+                .IsRequired()
+                .HasDefaultValue(true);
+            b.Property(x => x.notes)
+                .HasMaxLength(500)
+                .IsUnicode(false);
+
+            // Indexes
+            b.HasIndex(x => x.grower_name);
+            b.HasIndex(x => x.commodity_name);
+            b.HasIndex(x => x.is_active);
+            b.HasIndex(x => x.created_at);
         });
     }
 }
