@@ -17,7 +17,13 @@ namespace Api.Controllers;
 public class HarvestPlansController : ControllerBase
 {
 private readonly AppDbContext _db;
-public HarvestPlansController(AppDbContext db) => _db = db;
+private readonly AuthDbContext _authDb;
+
+public HarvestPlansController(AppDbContext db, AuthDbContext authDb)
+{
+    _db = db;
+    _authDb = authDb;
+}
 
 
     // GET: /api/v1/HarvestPlans?skip=0&take=100
@@ -34,6 +40,7 @@ public HarvestPlansController(AppDbContext db) => _db = db;
         x.grower_block_source_database,
         x.grower_block_id,
         x.placeholder_grower_id,
+        x.field_representative_id,
         x.planned_bins,
         x.contractor_id,
         x.harvesting_rate,
@@ -67,7 +74,19 @@ public HarvestPlansController(AppDbContext db) => _db = db;
             .SelectMany(b => _db.Commodities
                 .Where(c => c.source_database == b.source_database && c.CommodityIDx == b.CMTYIDX.Value)
                 .Select(c => new CommodityInfoDto(c.InvoiceCommodity, c.Commodity)))
-            .FirstOrDefault()
+            .FirstOrDefault(),
+        x.field_representative_id.HasValue ?
+            _authDb.Users
+                .Where(u => u.Id == x.field_representative_id.Value)
+                .Select(u => new UserInfoDto(
+                    u.Id,
+                    u.Username,
+                    u.FullName,
+                    u.Email,
+                    u.Role,
+                    u.IsActive
+                ))
+                .FirstOrDefault() : null
         ))
         .ToListAsync(ct);
         return Ok(rows);
@@ -115,7 +134,24 @@ if (block != null)
     }
 }
 
-return new HarvestPlanDto(x.id, x.grower_block_source_database, x.grower_block_id, x.placeholder_grower_id, x.planned_bins, x.contractor_id, x.harvesting_rate, x.hauler_id, x.hauling_rate, x.forklift_contractor_id, x.forklift_rate, x.pool_id, x.notes_general, x.deliver_to, x.packed_by, x.date, x.bins, block, commodity);
+// Get field representative data
+UserInfoDto? fieldRepresentative = null;
+if (x.field_representative_id.HasValue)
+{
+    fieldRepresentative = await _authDb.Users
+        .Where(u => u.Id == x.field_representative_id.Value)
+        .Select(u => new UserInfoDto(
+            u.Id,
+            u.Username,
+            u.FullName,
+            u.Email,
+            u.Role,
+            u.IsActive
+        ))
+        .FirstOrDefaultAsync(ct);
+}
+
+return new HarvestPlanDto(x.id, x.grower_block_source_database, x.grower_block_id, x.placeholder_grower_id, x.field_representative_id, x.planned_bins, x.contractor_id, x.harvesting_rate, x.hauler_id, x.hauling_rate, x.forklift_contractor_id, x.forklift_rate, x.pool_id, x.notes_general, x.deliver_to, x.packed_by, x.date, x.bins, block, commodity, fieldRepresentative);
 }
 
 
@@ -132,6 +168,7 @@ return new HarvestPlanDto(x.id, x.grower_block_source_database, x.grower_block_i
             grower_block_source_database = input.grower_block_source_database ?? "",
             grower_block_id = input.grower_block_id ?? 0,
             placeholder_grower_id = input.placeholder_grower_id,
+            field_representative_id = input.field_representative_id,
             planned_bins = input.planned_bins,
             contractor_id = input.contractor_id,
             harvesting_rate = input.harvesting_rate,
@@ -152,7 +189,24 @@ return new HarvestPlanDto(x.id, x.grower_block_source_database, x.grower_block_i
         await _db.SaveChangesAsync(ct);
 
 
-        var dto = new HarvestPlanDto(entity.id, entity.grower_block_source_database, entity.grower_block_id, entity.placeholder_grower_id, entity.planned_bins, entity.contractor_id, entity.harvesting_rate, entity.hauler_id, entity.hauling_rate, entity.forklift_contractor_id, entity.forklift_rate, entity.pool_id, entity.notes_general, entity.deliver_to, entity.packed_by, entity.date, entity.bins, null, null);
+        // Get field representative data for response
+        UserInfoDto? fieldRepresentative = null;
+        if (entity.field_representative_id.HasValue)
+        {
+            fieldRepresentative = await _authDb.Users
+                .Where(u => u.Id == entity.field_representative_id.Value)
+                .Select(u => new UserInfoDto(
+                    u.Id,
+                    u.Username,
+                    u.FullName,
+                    u.Email,
+                    u.Role,
+                    u.IsActive
+                ))
+                .FirstOrDefaultAsync(ct);
+        }
+
+        var dto = new HarvestPlanDto(entity.id, entity.grower_block_source_database, entity.grower_block_id, entity.placeholder_grower_id, entity.field_representative_id, entity.planned_bins, entity.contractor_id, entity.harvesting_rate, entity.hauler_id, entity.hauling_rate, entity.forklift_contractor_id, entity.forklift_rate, entity.pool_id, entity.notes_general, entity.deliver_to, entity.packed_by, entity.date, entity.bins, null, null, fieldRepresentative);
         return CreatedAtAction(nameof(Get), new { id = entity.id, version = "1" }, dto);
     }
 // PUT: /api/v1/HarvestPlans/{id}
@@ -168,6 +222,7 @@ if (x is null) return NotFound();
 if (input.grower_block_source_database != null) x.grower_block_source_database = input.grower_block_source_database;
 if (input.grower_block_id.HasValue) x.grower_block_id = input.grower_block_id.Value;
 x.placeholder_grower_id = input.placeholder_grower_id ?? x.placeholder_grower_id;
+x.field_representative_id = input.field_representative_id ?? x.field_representative_id;
 x.planned_bins = input.planned_bins ?? x.planned_bins;
 x.contractor_id = input.contractor_id ?? x.contractor_id;
 x.harvesting_rate = input.harvesting_rate ?? x.harvesting_rate;

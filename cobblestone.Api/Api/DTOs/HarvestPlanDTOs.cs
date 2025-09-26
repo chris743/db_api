@@ -21,12 +21,20 @@ public record CommodityInfoDto(
     string? commodity
 );
 
-
+public record UserInfoDto(
+    int id,
+    string username,
+    string? fullName,
+    string? email,
+    string role,
+    bool isActive
+);
 
 public record HarvestPlanCreateDto(
     string? grower_block_source_database,
     int? grower_block_id,
     Guid? placeholder_grower_id,
+    int? field_representative_id,
     int? planned_bins,
     long? contractor_id,
     decimal? harvesting_rate,
@@ -47,6 +55,7 @@ public record HarvestPlanUpdateDto(
     string? grower_block_source_database,
     int? grower_block_id,
     Guid? placeholder_grower_id,
+    int? field_representative_id,
     int? planned_bins,
     long? contractor_id,
     decimal? harvesting_rate,
@@ -66,6 +75,7 @@ public record HarvestPlanDto(
     string? grower_block_source_database,
     int?    grower_block_id,
     Guid?   placeholder_grower_id,
+    int?    field_representative_id,
     int?   planned_bins,
     long?  contractor_id,
     decimal? harvesting_rate,
@@ -80,5 +90,6 @@ public record HarvestPlanDto(
     DateTime? date,
     int?   bins,
     BlockInfoDto? block,
-    CommodityInfoDto? commodity
+    CommodityInfoDto? commodity,
+    UserInfoDto? fieldRepresentative
 );

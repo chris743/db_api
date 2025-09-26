@@ -8,6 +8,7 @@ public Guid id { get; set; } // uniqueidentifier (PK)
 public string? grower_block_source_database { get; set; } // nvarchar(20)
 public int? grower_block_id { get; set; } // int (FK later)
 public Guid? placeholder_grower_id { get; set; } // uniqueidentifier (FK to PlaceholderGrower)
+public int? field_representative_id { get; set; } // int (FK to Users)
 
 
 // Optionals (Allow Nulls checked in your screenshot)

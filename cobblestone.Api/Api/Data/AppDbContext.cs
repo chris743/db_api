@@ -50,6 +50,7 @@ public class AppDbContext : DbContext
             .IsUnicode(true);
 
             b.Property(x => x.placeholder_grower_id);
+            b.Property(x => x.field_representative_id);
 
             b.Property(x => x.deliver_to).HasMaxLength(30).IsUnicode(false);
             b.Property(x => x.packed_by).HasMaxLength(30).IsUnicode(false);
