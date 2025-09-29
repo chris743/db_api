@@ -30,6 +30,23 @@ public record UserInfoDto(
     bool isActive
 );
 
+public record PoolInfoDto(
+    int poolidx,
+    string? id,
+    string? descr,
+    string? icclosedflag,
+    string? pooltype,
+    int? cmtyidx,
+    int? varietyidx,
+    DateTime? icdatefrom,
+    DateTime? icdatethru,
+    int? deptidx,
+    int? costcenteridx,
+    int? garunidx,
+    int? advrunidx,
+    string source_database
+);
+
 public record HarvestPlanCreateDto(
     string? grower_block_source_database,
     int? grower_block_id,
@@ -91,5 +108,6 @@ public record HarvestPlanDto(
     int?   bins,
     BlockInfoDto? block,
     CommodityInfoDto? commodity,
-    UserInfoDto? fieldRepresentative
+    UserInfoDto? fieldRepresentative,
+    PoolInfoDto? pool
 );

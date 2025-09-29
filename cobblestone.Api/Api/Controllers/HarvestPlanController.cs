@@ -32,52 +32,33 @@ public HarvestPlansController(AppDbContext db, AuthDbContext authDb)
     public async Task<ActionResult<IEnumerable<HarvestPlanDto>>> List([FromQuery] int skip = 0, [FromQuery] int take = 100, CancellationToken ct = default)
     {
         take = Math.Clamp(take, 1, 500);
-        var rows = await _db.HarvestPlans.AsNoTracking()
-        .OrderByDescending(x => x.date)
-        .Skip(skip).Take(take)
-        .Select(x => new HarvestPlanDto(
-        x.id,
-        x.grower_block_source_database,
-        x.grower_block_id,
-        x.placeholder_grower_id,
-        x.field_representative_id,
-        x.planned_bins,
-        x.contractor_id,
-        x.harvesting_rate,
-        x.hauler_id,
-        x.hauling_rate,
-        x.forklift_contractor_id,
-        x.forklift_rate,
-        x.pool_id,
-        x.notes_general,
-        x.deliver_to,
-        x.packed_by,
-        x.date,
-        x.bins,
-        _db.Blocks
-            .Where(b => b.source_database == x.grower_block_source_database && b.GABLOCKIDX == x.grower_block_id)
-            .Select(b => new BlockInfoDto(
-                b.ID,
-                b.NAME,
-                b.BLOCKTYPE,
-                b.GrowerName,
-                b.GrowerID,
-                b.ACRES,
-                b.DISTRICT,
-                b.CROPYEARDESCR,
-                b.LATITUDE,
-                b.LONGITUDE
-            ))
-            .FirstOrDefault(),
-        _db.Blocks
-            .Where(b => b.source_database == x.grower_block_source_database && b.GABLOCKIDX == x.grower_block_id && b.CMTYIDX.HasValue)
-            .SelectMany(b => _db.Commodities
-                .Where(c => c.source_database == b.source_database && c.CommodityIDx == b.CMTYIDX.Value)
-                .Select(c => new CommodityInfoDto(c.InvoiceCommodity, c.Commodity)))
-            .FirstOrDefault(),
-        x.field_representative_id.HasValue ?
-            _authDb.Users
-                .Where(u => u.Id == x.field_representative_id.Value)
+        
+        // Get harvest plans 
+        var harvestPlans = await _db.HarvestPlans.AsNoTracking()
+            .OrderByDescending(x => x.date)
+            .Skip(skip).Take(take)
+            .ToListAsync(ct);
+
+        // Get all unique field representative IDs
+        var fieldRepIds = harvestPlans
+            .Where(hp => hp.field_representative_id.HasValue)
+            .Select(hp => hp.field_representative_id!.Value)
+            .Distinct()
+            .ToList();
+
+        // Get all unique pool IDs
+        var poolIds = harvestPlans
+            .Where(hp => hp.pool_id.HasValue)
+            .Select(hp => hp.pool_id!.Value)
+            .Distinct()
+            .ToList();
+
+        // Load all users for field representatives in one query
+        var users = new Dictionary<int, UserInfoDto>();
+        if (fieldRepIds.Any())
+        {
+            var usersData = await _authDb.Users
+                .Where(u => fieldRepIds.Contains(u.Id))
                 .Select(u => new UserInfoDto(
                     u.Id,
                     u.Username,
@@ -86,10 +67,118 @@ public HarvestPlansController(AppDbContext db, AuthDbContext authDb)
                     u.Role,
                     u.IsActive
                 ))
-                .FirstOrDefault() : null
-        ))
-        .ToListAsync(ct);
-        return Ok(rows);
+                .ToListAsync(ct);
+                
+            users = usersData.ToDictionary(u => u.id, u => u);
+        }
+
+        // Load all pools in one query
+        var pools = new Dictionary<int, PoolInfoDto>();
+        if (poolIds.Any())
+        {
+            var poolsData = await _db.Pools
+                .Where(p => poolIds.Contains(p.POOLIDX))
+                .Select(p => new PoolInfoDto(
+                    p.POOLIDX,
+                    p.ID,
+                    p.DESCR,
+                    p.ICCLOSEDFLAG,
+                    p.POOLTYPE,
+                    p.CMTYIDX,
+                    p.VARIETYIDX,
+                    p.ICDATEFROM,
+                    p.ICDATETHRU,
+                    p.DEPTIDX,
+                    p.COSTCENTERIDX,
+                    p.GARUNIDX,
+                    p.ADVRUNIDX,
+                    p.source_database
+                ))
+                .ToListAsync(ct);
+                
+            pools = poolsData.ToDictionary(p => p.poolidx, p => p);
+        }
+
+        // Get block and commodity data separately 
+        var harvestPlanResults = new List<HarvestPlanDto>();
+        
+        foreach (var harvestPlan in harvestPlans)
+        {
+            // Get block data
+            var block = await _db.Blocks
+                .Where(b => b.source_database == harvestPlan.grower_block_source_database && b.GABLOCKIDX == harvestPlan.grower_block_id)
+                .Select(b => new BlockInfoDto(
+                    b.ID,
+                    b.NAME,
+                    b.BLOCKTYPE,
+                    b.GrowerName,
+                    b.GrowerID,
+                    b.ACRES,
+                    b.DISTRICT,
+                    b.CROPYEARDESCR,
+                    b.LATITUDE,
+                    b.LONGITUDE
+                ))
+                .FirstOrDefaultAsync(ct);
+
+            // Get commodity data
+            CommodityInfoDto? commodity = null;
+            if (block != null)
+            {
+                var blockWithCommodity = await _db.Blocks
+                    .Where(b => b.source_database == harvestPlan.grower_block_source_database && b.GABLOCKIDX == harvestPlan.grower_block_id)
+                    .FirstOrDefaultAsync(ct);
+                
+                if (blockWithCommodity?.CMTYIDX.HasValue == true)
+                {
+                    commodity = await _db.Commodities
+                        .Where(c => c.source_database == harvestPlan.grower_block_source_database && c.CommodityIDx == blockWithCommodity.CMTYIDX.Value)
+                        .Select(c => new CommodityInfoDto(c.InvoiceCommodity, c.Commodity))
+                        .FirstOrDefaultAsync(ct);
+                }
+            }
+
+            // Lookup field representative data from pre-loaded users
+            UserInfoDto? fieldRepresentative = null;
+            if (harvestPlan.field_representative_id.HasValue && users.ContainsKey(harvestPlan.field_representative_id.Value))
+            {
+                fieldRepresentative = users[harvestPlan.field_representative_id.Value];
+            }
+
+            // Lookup pool data from pre-loaded pools
+            PoolInfoDto? pool = null;
+            if (harvestPlan.pool_id.HasValue && pools.ContainsKey(harvestPlan.pool_id.Value))
+            {
+                pool = pools[harvestPlan.pool_id.Value];
+            }
+
+            harvestPlanResults.Add(new HarvestPlanDto(
+                harvestPlan.id,
+                harvestPlan.grower_block_source_database,
+                harvestPlan.grower_block_id,
+                harvestPlan.placeholder_grower_id,
+                harvestPlan.field_representative_id,
+                harvestPlan.planned_bins,
+                harvestPlan.contractor_id,
+                harvestPlan.harvesting_rate,
+                harvestPlan.hauler_id,
+                harvestPlan.hauling_rate,
+                harvestPlan.forklift_contractor_id,
+                harvestPlan.forklift_rate,
+                harvestPlan.pool_id,
+                harvestPlan.notes_general,
+                harvestPlan.deliver_to,
+                harvestPlan.packed_by,
+                harvestPlan.date,
+                harvestPlan.bins,
+                block,
+                commodity,
+                fieldRepresentative,
+                pool
+            ));
+        }
+
+        return Ok(harvestPlanResults);
     }
 // GET: /api/v1/HarvestPlans/{id}
 [HttpGet("{id:guid}")]
@@ -151,7 +240,32 @@ if (x.field_representative_id.HasValue)
         .FirstOrDefaultAsync(ct);
 }
 
-return new HarvestPlanDto(x.id, x.grower_block_source_database, x.grower_block_id, x.placeholder_grower_id, x.field_representative_id, x.planned_bins, x.contractor_id, x.harvesting_rate, x.hauler_id, x.hauling_rate, x.forklift_contractor_id, x.forklift_rate, x.pool_id, x.notes_general, x.deliver_to, x.packed_by, x.date, x.bins, block, commodity, fieldRepresentative);
+// Get pool data
+PoolInfoDto? pool = null;
+if (x.pool_id.HasValue)
+{
+    pool = await _db.Pools
+        .Where(p => p.POOLIDX == x.pool_id.Value)
+        .Select(p => new PoolInfoDto(
+            p.POOLIDX,
+            p.ID,
+            p.DESCR,
+            p.ICCLOSEDFLAG,
+            p.POOLTYPE,
+            p.CMTYIDX,
+            p.VARIETYIDX,
+            p.ICDATEFROM,
+            p.ICDATETHRU,
+            p.DEPTIDX,
+            p.COSTCENTERIDX,
+            p.GARUNIDX,
+            p.ADVRUNIDX,
+            p.source_database
+        ))
+        .FirstOrDefaultAsync(ct);
+}
+
+return new HarvestPlanDto(x.id, x.grower_block_source_database, x.grower_block_id, x.placeholder_grower_id, x.field_representative_id, x.planned_bins, x.contractor_id, x.harvesting_rate, x.hauler_id, x.hauling_rate, x.forklift_contractor_id, x.forklift_rate, x.pool_id, x.notes_general, x.deliver_to, x.packed_by, x.date, x.bins, block, commodity, fieldRepresentative, pool);
 }
 
 
@@ -206,7 +320,32 @@ return new HarvestPlanDto(x.id, x.grower_block_source_database, x.grower_block_i
                 .FirstOrDefaultAsync(ct);
         }
 
-        var dto = new HarvestPlanDto(entity.id, entity.grower_block_source_database, entity.grower_block_id, entity.placeholder_grower_id, entity.field_representative_id, entity.planned_bins, entity.contractor_id, entity.harvesting_rate, entity.hauler_id, entity.hauling_rate, entity.forklift_contractor_id, entity.forklift_rate, entity.pool_id, entity.notes_general, entity.deliver_to, entity.packed_by, entity.date, entity.bins, null, null, fieldRepresentative);
+        // Get pool data for response
+        PoolInfoDto? pool = null;
+        if (entity.pool_id.HasValue)
+        {
+            pool = await _db.Pools
+                .Where(p => p.POOLIDX == entity.pool_id.Value)
+                .Select(p => new PoolInfoDto(
+                    p.POOLIDX,
+                    p.ID,
+                    p.DESCR,
+                    p.ICCLOSEDFLAG,
+                    p.POOLTYPE,
+                    p.CMTYIDX,
+                    p.VARIETYIDX,
+                    p.ICDATEFROM,
+                    p.ICDATETHRU,
+                    p.DEPTIDX,
+                    p.COSTCENTERIDX,
+                    p.GARUNIDX,
+                    p.ADVRUNIDX,
+                    p.source_database
+                ))
+                .FirstOrDefaultAsync(ct);
+        }
+
+        var dto = new HarvestPlanDto(entity.id, entity.grower_block_source_database, entity.grower_block_id, entity.placeholder_grower_id, entity.field_representative_id, entity.planned_bins, entity.contractor_id, entity.harvesting_rate, entity.hauler_id, entity.hauling_rate, entity.forklift_contractor_id, entity.forklift_rate, entity.pool_id, entity.notes_general, entity.deliver_to, entity.packed_by, entity.date, entity.bins, null, null, fieldRepresentative, pool);
         return CreatedAtAction(nameof(Get), new { id = entity.id, version = "1" }, dto);
     }
 // PUT: /api/v1/HarvestPlans/{id}
